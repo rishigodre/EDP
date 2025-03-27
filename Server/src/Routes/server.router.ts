@@ -21,6 +21,16 @@ router.get("/getalldata", async (_req: Request, res: Response) => {
 });
 
 // POST
+router.post("/addchunk", async (req: Request, res: Response) => {
+    try {
+        if (!collections.chunks) throw new Error("Database not connected");
+        const chunk = new Chunk(req.body.data);
+        const result = await collections.chunks.insertOne(chunk);
+        res.status(201).send(result.insertedId);
+    } catch (error: any) {
+        res.status(500).send(error.message);
+    }
+});
 
 // PUT
 
