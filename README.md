@@ -4,16 +4,13 @@
   (can be changed anytime)
 ### Simple Data Formatting Scheme For Communication With The Server:
 ```
-chunk       -> version, uuid, hwid, password, data
-password    -> [size] : [char] * size
-data        -> timestamp, payload
-payload     -> [ N ] : [ log ] * N
-log         -> [ sensor_id ] , [ value ]
-hwid        -> string
-version     -> string
-uuid        -> string
-sensor_id   -> string
-value       -> float
+log -> hwid, hwpassword, payload,
+payload -> (sensorID, timestamp, SensorData) * N, separated by '/n'
+hwid -> string (uuid)
+hwpassword -> string (16 chars)
+sensorID -> string (1 digit, 0-9)
+timestamp -> string (var char, unix timestamp, 13 digits)
+sensorData -> string (var char, data separated by '-')
 ```
 
 
