@@ -2,7 +2,7 @@ import { Chunk } from "../Models/chunk";
 import { SensorLog, SensorData, GenerateEmptySensorData} from "../Models/sensorData";
 
 
-export async function ParseRawData(data : string): Promise<Chunk> {
+export function ParseRawData(data : string): Chunk {
     try {
         //take the hwid
         const hwid = data.substring(0, 32);

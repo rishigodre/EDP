@@ -38,7 +38,7 @@ router.post("/addrawdata", async (req: Request, res: Response) => {
     try {
         const rawData: string = req.body.Data;
         if (!rawData) throw new Error("No data provided");
-        const parsedData = await ParseRawData(rawData);
+        const parsedData = ParseRawData(rawData);
         if (!db) throw new Error("Database not connected");
         const result = await db.collection<Chunk>("Chunks").insertOne(parsedData);
         if (!result.acknowledged) throw new Error("Failed to insert data into database");
