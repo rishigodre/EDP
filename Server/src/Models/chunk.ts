@@ -1,6 +1,14 @@
 // External dependencies
 import { ObjectId } from "mongodb";
+import { SensorData } from "./sensorData";
 // Class Implementation
-export default class Chunk {
-    constructor(public data: string, public id?: ObjectId) {}
+
+
+export class Chunk {
+    constructor(
+        public hwid: string,
+        public timestamp: number,
+        public password: string,
+        public payload: SensorData[],
+    ) { }
 }

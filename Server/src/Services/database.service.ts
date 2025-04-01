@@ -1,8 +1,7 @@
 import * as dotenv from 'dotenv';
 import * as mongoDB from "mongodb";
 
-export const collections: { chunks?: mongoDB.Collection } = {}
-
+export const MongoDB : {db?: mongoDB.Db} = {};
 export async function connectToDatabase() {
     dotenv.config();
     if (process.env.DB_CONN_STRING === undefined || process.env.DB_NAME === undefined) {
@@ -10,10 +9,7 @@ export async function connectToDatabase() {
     }
     console.log(process.env.DB_CONN_STRING);
     const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.DB_CONN_STRING);
-    client.connect();
-    const db: mongoDB.Db = client.db(process.env.DB_NAME);
-    const chunksCollection = db.collection("chunks");
-    collections.chunks = chunksCollection
-    console.log(`Successfully connected to database: ${db.databaseName}`);
-    return db;
+    await client.connect();
+    MongoDB.db = client.db(process.env.DB_NAME);
+    console.log(`Successfully connected to database: ${MongoDB.db.databaseName}`);
 }
