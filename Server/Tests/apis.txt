@@ -1,0 +1,10 @@
+curl --location 'http://localhost:3000/api/alert' \
+--header 'Content-Type: application/json' \
+--data '{
+    "Data": "9334de0b9ebd424d95e40d338953137ef75c2a1d9e8b6c3417434916644810BuddhaDown"
+}'
+
+
+9334de0b9ebd424d95e40d338953137ef75c2a1d9e8b6c341743491664481register
+
+
