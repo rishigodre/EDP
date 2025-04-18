@@ -21,7 +21,7 @@ const wss = new WebSocketService(3010);
 router.get("/getallrawdata", async (_req: Request, res: Response) => {
     try {
         if (!DB.db) throw new Error("Database not connected");
-        const chunks = await DB.db.collection<Chunk>("Chunk").find({}).toArray();
+        const chunks = await DB.db.collection<Chunk>("Chunks").find({}).toArray();
         res.status(200).send(chunks);
     } catch (error: any) {
         res.status(500).send(error.message);
