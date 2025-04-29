@@ -12,8 +12,7 @@ from mpu6050_i2c import *
 SAMPLE_INTERVAL = 0.001 
 
 # Constants for logging
-HWID_PART1 = "9334de0b9ebd424d95e40d338953137e"
-HWID_PART2 = "f75c2a1d9e8b6c34"
+HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
 LOG_FILE = "sensors.log"
 
@@ -112,17 +111,20 @@ def main():
 
             # Logging
             current_time = time.time()
+            
+            # multiply time stamp by 1000 to and truncate the decimal part to get resolution of ms
             timestamp = str(int(current_time * 1000))  # 13-digit timestamp in ms
             sensor_lines = []
 
             if bpm is not None and spo2 is not None and temp is not None:
-                sensor_lines.append(f"1{timestamp}-{int(bpm)}-{int(spo2)}-{int(temp)}")
+                sensor_lines.append(f"1-{timestamp}-{int(bpm)}")
+                sensor_lines.append(f"2-{timestamp}-{int(spo2)}")
+                sensor_lines.append(f"3-{timestamp}-{int(temp)}")
             if lo_plus.value == 0 and lo_minus.value == 0:
-                sensor_lines.append(f"2{timestamp}-{ecg_value}")
-            sensor_lines.append(f"3{timestamp}-{jerkMag:.2f}")
+                sensor_lines.append(f"4-{timestamp}-{ecg_value}")
+            sensor_lines.append(f"5-{timestamp}-{jerkMag:.2f}")
 
-            hwid = HWID_PART1 + HWID_PART2
-            log_entry = f"{hwid}." + "\n".join(sensor_lines) + "\n"
+            log_entry = f"{HWID}." + "\n".join(sensor_lines) + "\n"
 
             with open(LOG_FILE, "a") as f:
                 f.write(log_entry)
