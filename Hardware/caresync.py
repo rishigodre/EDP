@@ -117,14 +117,14 @@ def main():
             sensor_lines = []
 
             if bpm is not None and spo2 is not None and temp is not None:
-                sensor_lines.append(f"1-{timestamp}-{int(bpm)}")
-                sensor_lines.append(f"2-{timestamp}-{int(spo2)}")
-                sensor_lines.append(f"3-{timestamp}-{int(temp)}")
+                sensor_lines.append(f"1{timestamp}{int(bpm)}")
+                sensor_lines.append(f"2{timestamp}{int(spo2)}")
+                sensor_lines.append(f"3{timestamp}{int(temp)}")
             if lo_plus.value == 0 and lo_minus.value == 0:
-                sensor_lines.append(f"4-{timestamp}-{ecg_value}")
-            sensor_lines.append(f"5-{timestamp}-{jerkMag:.2f}")
+                sensor_lines.append(f"4{timestamp}{ecg_value}")
+            sensor_lines.append(f"5{timestamp}{jerkMag}")
 
-            log_entry = f"{HWID}." + "\n".join(sensor_lines) + "\n"
+            log_entry = f"".join(sensor_lines) + "\n"
 
             with open(LOG_FILE, "a") as f:
                 f.write(log_entry)
