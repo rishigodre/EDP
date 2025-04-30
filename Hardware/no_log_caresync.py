@@ -11,12 +11,7 @@ from mpu6050_i2c import *
 
 SAMPLE_INTERVAL = 0.001 
 
-# Constants for logging
-HWID = "9334de0b9ebd424d95e40d338953137e"
-HW_PASSWORD = "A1B2C3D4E5F6G7H8"
-LOG_FILE = "sensors.log"
-
-# Function for peak detection 
+# function for peak detection 
 def detect_peaks(signal, threshold):
     peaks = []
     for i in range(1, len(signal)-1):
@@ -24,7 +19,7 @@ def detect_peaks(signal, threshold):
             peaks.append(i)
     return peaks
 
-# Function for calculation of Beats per minute 
+# functions for calculation of Beats per minute 
 def calculate_bpm(peaks, times):
     if len(peaks) < 2:
         return None
@@ -32,7 +27,7 @@ def calculate_bpm(peaks, times):
     avg_interval = np.mean(intervals)
     return 60 / avg_interval if avg_interval > 0 else None
 
-# Function for SpO2% estimation
+# function for SpO2% 
 def basic_spo2_estimation(ir, red):
     if ir and red:
         ratio = red / (ir + 1)
@@ -40,16 +35,23 @@ def basic_spo2_estimation(ir, red):
     return None
 
 def main():
+    # Setup gpiozero for LO+ and LO- pins
     lo_plus = DigitalInputDevice(14)  # GPIO14 (Pin 8)
     lo_minus = DigitalInputDevice(15)  # GPIO15 (Pin 10)
 
+    # Initialize I2C bus
     i2c = busio.I2C(board.SCL, board.SDA)
 
+    # variables using in the calculation of jerk
     oldG = 1
+    #fallThreshold = 1500
 
-    x_len = 500
+    x_len = 500         # Number of points to display
+    y_range = 32768     # 16-bit ADC range
+    xs = list(range(0, x_len))
     ys = [0] * x_len
 
+    # heart rate and SpO2 max30 max30 being enabled 
     max30 = MAX30100(
         mode = 0x03,
         sample_rate = 100,
@@ -59,32 +61,42 @@ def main():
     )
     max30.enable_spo2()
 
+    # Ring buffers for live data
     ir_data = deque(maxlen=500)
     red_data = deque(maxlen=500)
     timestamps = deque(maxlen=500)
 
+    # Initialize ADS1115 ADC
     adc = ADS1115(i2c)
-    adc.gain = 1
-    chan = AnalogIn(adc, 0)
+    adc.gain = 1  # Gain of 1x (±4.096V range)
+    chan = AnalogIn(adc, 0) # setting the channel for input 
 
     try:
         print("Monitoring... Press Ctrl+C to stop.")
         while True:
+            # trying to read the accelerometer 
             try:
-                ax, ay, az, wx, wy, wz = mpu6050_conv()
+                ax,ay,az,wx,wy,wz = mpu6050_conv() # read and convert mpu6050 data
             except:
                 continue
-
-            netG = (ax ** 2 + ay ** 2 + az ** 2) ** 0.5
-            jerkMag = (netG - oldG) / SAMPLE_INTERVAL
+            # calculation of net acceleration in g and Jerk
+            netG = ax * ax + ay * ay + az * az
+            netG = netG ** 0.5
+            jerkMag = (netG - oldG) / (SAMPLE_INTERVAL)
+            # direct fall detection using jerk
+            if jerkMag > fallThreshold:
+                print("fall!!")
+                time.sleep(0.1)
             oldG = netG
-
+            
+            #reading MAX30100 for heart reat and SpO2 
             max30.read_sensor()
             ir = max30.ir
             red = max30.red
             t = time.time()
 
             if ir is None or ir < 1000:
+                print("[WARN] No finger detected or weak signal.")
                 time.sleep(0.1)
                 continue
 
@@ -92,8 +104,9 @@ def main():
             red_data.append(red)
             timestamps.append(t)
 
+            # Peak detection
             if len(ir_data) > 100:
-                peaks = detect_peaks(ir_data, threshold=np.mean(ir_data) * 1.05)
+                peaks = detect_peaks(ir_data, threshold=np.mean(ir_data)*1.05)
                 bpm = calculate_bpm(peaks, list(timestamps)) if peaks else None
             else:
                 bpm = None
@@ -101,33 +114,17 @@ def main():
             spo2 = basic_spo2_estimation(ir, red)
             max30.refresh_temperature()
             temp = max30.get_temperature()
-
+            print(f"Temp: {temp:.1f}°C | SpO2: {spo2:.1f}% | HR: {bpm:.1f} bpm" if bpm else "HR: --")
+            
+            # reading the data of ecg sensor using the ADC
             if lo_plus.value == 1 or lo_minus.value == 1:
                 ecg_value = 0
+                print("Lead off detected!")
             else:
-                ecg_value = chan.value
+                ecg_value = chan.value  # RAW ADC counts (-32768 to +32767)
+                print("ECG value is :",ecg_value)
             ys.append(ecg_value)
             ys = ys[-x_len:]
-
-            # Logging
-            current_time = time.time()
-            
-            # multiply time stamp by 1000 to and truncate the decimal part to get resolution of ms
-            timestamp = str(int(current_time * 1000))  # 13-digit timestamp in ms
-            sensor_lines = []
-
-            if bpm is not None and spo2 is not None and temp is not None:
-                sensor_lines.append(f"1{timestamp}{int(bpm)}")
-                sensor_lines.append(f"2{timestamp}{int(spo2)}")
-                sensor_lines.append(f"3{timestamp}{int(temp)}")
-            if lo_plus.value == 0 and lo_minus.value == 0:
-                sensor_lines.append(f"4{timestamp}{ecg_value}")
-            sensor_lines.append(f"5{timestamp}{jerkMag}")
-
-            log_entry = f"".join(sensor_lines) + "\n"
-
-            with open(LOG_FILE, "a") as f:
-                f.write(log_entry)
 
             time.sleep(SAMPLE_INTERVAL)
 
