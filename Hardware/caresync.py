@@ -132,6 +132,8 @@ def main():
             time.sleep(SAMPLE_INTERVAL)
 
     except KeyboardInterrupt:
+        max102.shutdown()
+        
         print("\nMonitoring stopped.")
 
 if __name__ == "__main__":
