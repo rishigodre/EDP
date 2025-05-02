@@ -17,28 +17,6 @@ HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
 LOG_FILE = "sensors.log"
 
-# Function for peak detection 
-def detect_peaks(signal, threshold):
-    peaks = []
-    for i in range(1, len(signal)-1):
-        if signal[i] > threshold and signal[i] > signal[i-1] and signal[i] > signal[i+1]:
-            peaks.append(i)
-    return peaks
-
-# Function for calculation of Beats per minute 
-def calculate_bpm(peaks, times):
-    if len(peaks) < 2:
-        return None
-    intervals = [times[peaks[i]] - times[peaks[i-1]] for i in range(1, len(peaks))]
-    avg_interval = np.mean(intervals)
-    return 60 / avg_interval if avg_interval > 0 else None
-
-# Function for SpO2% estimation
-def basic_spo2_estimation(ir, red):
-    if ir and red:
-        ratio = red / (ir + 1)
-        return max(0, min(100, 110 - 15 * ratio))
-    return None
 
 def main():
     lo_plus = DigitalInputDevice(14)  # GPIO14 (Pin 8)
@@ -73,7 +51,9 @@ def main():
             oldG = netG
 
             num_bytes = max102.get_data_present()
-            bpm = None, spo2 = None, temp = None
+            bpm = None
+            spo2 = None
+            temp = None
             if num_bytes > 0:
                 # grab all the data and stash it into arrays
                 while num_bytes > 0:
@@ -133,7 +113,6 @@ def main():
 
     except KeyboardInterrupt:
         max102.shutdown()
-        
         print("\nMonitoring stopped.")
 
 if __name__ == "__main__":
