@@ -12,6 +12,7 @@ export function ParseRawData(data: string): Chunk {
         const sensorData: SensorData[] = GenerateEmptySensorData();
 
         lines.forEach(line => {
+            if (line.length < 1) return;
             const sensorId = line.substring(0, 1);
             const timestamp = line.substring(1, 14);
             const sensorDataLine = line.substring(14).split("-");
