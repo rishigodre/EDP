@@ -13,6 +13,7 @@ export const router = express.Router();
 
 const DB: { db?: mongoDB.Db } = MongoDB; // Assign the database connection to a variable
 console.log("Database: ", DB.db?.databaseName);
+router.use(express.text());
 router.use(express.json());
 
 const wss = new WebSocketService(3010);
@@ -47,10 +48,9 @@ router.get("/getrawdataafter", async (req: Request, res: Response) => {
 // POST
 router.post("/addrawdata", async (req: Request, res: Response) => {
     try {
-        const rawData: string = req.body.Data;
+        const rawData: string = req.body;
         if (!rawData) throw new Error("No data provided");
-
-        const parsedData = ParseRawData(rawData);
+        const parsedData = ParseRawData(rawData.trim());
         if (!DB.db) throw new Error("Database not connected");
 
         const result = await DB.db.collection<Chunk>("Chunks").insertOne(parsedData);

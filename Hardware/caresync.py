@@ -8,13 +8,13 @@ from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 from gpiozero import DigitalInputDevice
 from mpu6050_i2c import *
-
+import os
 SAMPLE_INTERVAL = 0.001 
 
 # Constants for logging
 HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
-LOG_FILE = "sensors.log"
+PIPE_PATH = "tmp/hw_data_pipe"
 
 # Function for peak detection 
 def detect_peaks(signal, threshold):
@@ -39,7 +39,26 @@ def basic_spo2_estimation(ir, red):
         return max(0, min(100, 110 - 15 * ratio))
     return None
 
+def ensure_pipe():
+    if not os.path.exists(PIPE_PATH):
+        os.mkfifo(PIPE_PATH)
+        print(f"[HW Emulator] Created FIFO at {PIPE_PATH}")
+        
+def pipe(log_entry):
+    with open(PIPE_PATH, "w") as f:
+        f.write(log_entry)
+        try:
+            with open(PIPE_PATH, 'w') as pipe:
+                pipe.write(log_entry)
+        except BrokenPipeError:
+            print("[HW Emulator] Reader disconnected. Waiting to retry...")
+            time.sleep(1)
+        except Exception as e:
+            print(f"[HW Emulator] Error: {e}")
+            time.sleep(1)
+
 def main():
+    ensure_pipe()
     lo_plus = DigitalInputDevice(14)  # GPIO14 (Pin 8)
     lo_minus = DigitalInputDevice(15)  # GPIO15 (Pin 10)
 
@@ -125,10 +144,7 @@ def main():
             sensor_lines.append(f"5{timestamp}{jerkMag}")
 
             log_entry = f"".join(sensor_lines) + "\n"
-
-            with open(LOG_FILE, "a") as f:
-                f.write(log_entry)
-
+            pipe(log_entry)
             time.sleep(SAMPLE_INTERVAL)
 
     except KeyboardInterrupt:
