@@ -9,15 +9,15 @@ from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 from gpiozero import DigitalInputDevice
 from mpu6050_i2c import *
+import os
 
-SAMPLE_INTERVAL = 0.01 
-SAMPLE_INTERVAL = 0.001 
+SAMPLE_INTERVAL = 0.100
 
 
 # Constants for logging
 HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
-PIPE_PATH = "tmp/hw_data_pipe"
+PIPE_PATH = "/tmp/hw_data_pipe"
 
 
 def ensure_pipe():
