@@ -16,7 +16,7 @@ export class SensorLog {
 
 export function GenerateEmptySensorData(): SensorData[] {
     let temp: SensorData[] = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
         temp.push(new SensorData(i, []));
     }
     return temp;
