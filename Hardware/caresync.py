@@ -1,5 +1,6 @@
 import time
-from max30100 import MAX30100
+from max30102 import MAX30102
+import hrcalc
 import numpy as np
 from collections import deque
 import board
@@ -8,36 +9,16 @@ from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 from gpiozero import DigitalInputDevice
 from mpu6050_i2c import *
-import os
+
+SAMPLE_INTERVAL = 0.01 
 SAMPLE_INTERVAL = 0.001 
+
 
 # Constants for logging
 HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
 PIPE_PATH = "tmp/hw_data_pipe"
 
-# Function for peak detection 
-def detect_peaks(signal, threshold):
-    peaks = []
-    for i in range(1, len(signal)-1):
-        if signal[i] > threshold and signal[i] > signal[i-1] and signal[i] > signal[i+1]:
-            peaks.append(i)
-    return peaks
-
-# Function for calculation of Beats per minute 
-def calculate_bpm(peaks, times):
-    if len(peaks) < 2:
-        return None
-    intervals = [times[peaks[i]] - times[peaks[i-1]] for i in range(1, len(peaks))]
-    avg_interval = np.mean(intervals)
-    return 60 / avg_interval if avg_interval > 0 else None
-
-# Function for SpO2% estimation
-def basic_spo2_estimation(ir, red):
-    if ir and red:
-        ratio = red / (ir + 1)
-        return max(0, min(100, 110 - 15 * ratio))
-    return None
 
 def ensure_pipe():
     if not os.path.exists(PIPE_PATH):
@@ -69,18 +50,10 @@ def main():
     x_len = 500
     ys = [0] * x_len
 
-    max30 = MAX30100(
-        mode = 0x03,
-        sample_rate = 100,
-        pulse_width = 1600,
-        led_current_red = 27.1,
-        led_current_ir = 27.1
-    )
-    max30.enable_spo2()
-
-    ir_data = deque(maxlen=500)
-    red_data = deque(maxlen=500)
-    timestamps = deque(maxlen=500)
+    max102 = MAX30102()
+    ir_data = []
+    red_data = []
+    bpms = []
 
     adc = ADS1115(i2c)
     adc.gain = 1
@@ -98,28 +71,37 @@ def main():
             jerkMag = (netG - oldG) / SAMPLE_INTERVAL
             oldG = netG
 
-            max30.read_sensor()
-            ir = max30.ir
-            red = max30.red
-            t = time.time()
+            num_bytes = max102.get_data_present()
+            bpm = None
+            spo2 = None
+            temp = None
+            if num_bytes > 0:
+                # grab all the data and stash it into arrays
+                while num_bytes > 0:
+                    red, ir = max102.read_fifo()
+                    num_bytes -= 1
+                    ir_data.append(ir)
+                    red_data.append(red)
 
-            if ir is None or ir < 1000:
-                time.sleep(0.1)
-                continue
+                while len(ir_data) > 100:
+                    ir_data.pop(0)
+                    red_data.pop(0)
 
-            ir_data.append(ir)
-            red_data.append(red)
-            timestamps.append(t)
-
-            if len(ir_data) > 100:
-                peaks = detect_peaks(ir_data, threshold=np.mean(ir_data) * 1.05)
-                bpm = calculate_bpm(peaks, list(timestamps)) if peaks else None
-            else:
-                bpm = None
-
-            spo2 = basic_spo2_estimation(ir, red)
-            max30.refresh_temperature()
-            temp = max30.get_temperature()
+                if len(ir_data) == 100:
+                    bpm, valid_bpm, spo2, valid_spo2 = hrcalc.calc_hr_and_spo2(ir_data, red_data)
+                    if valid_bpm:
+                        bpms.append(bpm)
+                        while len(bpms) > 4:
+                            bpms.pop(0)
+                        bpm = np.mean(bpms)
+                        if (np.mean(ir_data) < 50000 and np.mean(red_data) < 50000):
+                            bpm = 0
+                            if flag == False:
+                                print("Finger not detected")
+                                flag = True
+                        else:
+                            flag = False
+                            temp = max102.read_temperature()
 
             if lo_plus.value == 1 or lo_minus.value == 1:
                 ecg_value = 0
@@ -148,6 +130,7 @@ def main():
             time.sleep(SAMPLE_INTERVAL)
 
     except KeyboardInterrupt:
+        max102.shutdown()
         print("\nMonitoring stopped.")
 
 if __name__ == "__main__":
