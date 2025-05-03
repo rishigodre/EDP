@@ -26,8 +26,7 @@ export function ParseRawData(data: string): Chunk {
         const chunk: Chunk = new Chunk(hwid, Date.now(), hwpassword, sensorData);
         return chunk;
     } catch (error) {
-        console.error("Error processing chunk:", error);
-        return new Chunk("", 0, "", []);
+        throw new Error("Error processing raw data: " + error);
     }
 }
 
@@ -41,8 +40,7 @@ export function ParseAlert(alert: string): Alert {
             alert.substring(62),
         );
     } catch (error) {
-        console.error("Error processing alert:", error);
-        return new Alert("", "", 0, 0, "");
+        throw new Error("Error processing alert: " + error);
     }
 }
 
@@ -55,7 +53,6 @@ export function ParseClientMessage(message: string): ClientMessage {
             message.substring(61), // type
         );
     } catch (error) {
-        console.error("Error processing client message:", error);
-        return new ClientMessage("", "", 0, "error");
+        throw new Error("Error processing client message: " + error);
     }
 }
