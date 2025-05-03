@@ -58,7 +58,7 @@ def main():
     adc = ADS1115(i2c)
     adc.gain = 1
     chan = AnalogIn(adc, 0)
-
+    flag = False
     try:
         print("Monitoring... Press Ctrl+C to stop.")
         while True:
@@ -117,16 +117,20 @@ def main():
             timestamp = str(int(current_time * 1000))  # 13-digit timestamp in ms
             sensor_lines = []
 
-            if bpm is not None and spo2 is not None and temp is not None:
-                sensor_lines.append(f"1{timestamp}{int(bpm)}")
-                sensor_lines.append(f"2{timestamp}{int(spo2)}")
-                sensor_lines.append(f"3{timestamp}{int(temp)}")
+            if bpm is not None:
+                sensor_lines += f"1{timestamp}{int(bpm)}\n"
+            
+            if spo2 is not None:
+                sensor_lines += f"2{timestamp}{int(spo2)}\n"
+            if temp is not None:
+                sensor_lines += f"3{timestamp}{int(temp)}\n"
+                
             if lo_plus.value == 0 and lo_minus.value == 0:
-                sensor_lines.append(f"4{timestamp}{ecg_value}")
-            sensor_lines.append(f"5{timestamp}{jerkMag}")
+                sensor_lines += f"4{timestamp}{ecg_value}\n"
+            if jerkMag is not None:
+                sensor_lines += f"5{timestamp}{jerkMag}\n"
 
-            log_entry = f"".join(sensor_lines) + "\n"
-            pipe(log_entry)
+            pipe(sensor_lines)
             time.sleep(SAMPLE_INTERVAL)
 
     except KeyboardInterrupt:
