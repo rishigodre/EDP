@@ -63,18 +63,24 @@ async fn create_and_upload_chunk(mut rx: mpsc::Receiver<String>) {
         }
         println!("Chunk => {}", chunk);
         let res = client.post(
-            "http://localhost:3000/api/addrawdata"
+            "http://edp.durb.xyz/api/addrawdata"
         )
         .header("Content-Type", "text/plain")
-        .body(chunk.clone()).send().await;
-        match res{
-            Ok(res) => {}
+        .body(chunk.clone()).timeout(Duration::from_secs(5)).send().await;
+
+        match res {
+            Ok(res) => {
+                if res.status().is_success() {
+                    println!("Data successfully uploaded.");
+                } else {
+                    eprintln!("Server responded with error: {}", res.status());
+                }
+            }
             Err(e) => {
                 eprintln!("Error in sending POST req: {}", e);
                 sleep(Duration::from_secs(2)).await;
             }
-        }   
-        sleep(Duration::from_millis(1)).await; 
+        }
     }
 }
 

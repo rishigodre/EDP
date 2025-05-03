@@ -9,6 +9,7 @@ def ensure_pipe():
     if not os.path.exists(PIPE_PATH):
         os.mkfifo(PIPE_PATH)
 
+
 def generate_sensor_data(sensor_id: int) -> str:
     """Create a single line of sensor data in string format."""
     timestamp = int(time.time() * 1000)
@@ -17,7 +18,7 @@ def generate_sensor_data(sensor_id: int) -> str:
 
 def generate_payload() -> str:
     """Generate data for multiple sensors."""
-    return "".join([generate_sensor_data(sensor_id) + "\n" for sensor_id in range(1)])
+    return generate_sensor_data(random.uniform(0,4)) + "\n"
 
 def start_hardware_emulator():
     ensure_pipe()
