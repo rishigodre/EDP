@@ -10,7 +10,7 @@ hwid -> string (uuid)
 hwpassword -> string (16 chars)
 sensorID -> string (1 digit, 0-9)
 timestamp -> string (var char, unix timestamp, 13 digits)
-sensorData -> string (var char, data separated by '-')
+sensorData -> string (var char, data separated by '|')
 ```
 
 

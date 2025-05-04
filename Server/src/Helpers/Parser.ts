@@ -15,7 +15,7 @@ export function ParseRawData(data: string): Chunk {
             if (line.length < 1) return;
             const sensorId = line.substring(0, 1);
             const timestamp = line.substring(1, 14);
-            const sensorDataLine = line.substring(14).split("-");
+            const sensorDataLine = line.substring(14).split("|");
             const log: SensorLog = new SensorLog(parseInt(timestamp), []);
             for (let i = 0; i < sensorDataLine.length; i++) {
                 const sensorValue = parseFloat(sensorDataLine[i]);

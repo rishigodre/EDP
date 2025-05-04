@@ -68,7 +68,7 @@ def main():
                 continue
 
             netG = (ax ** 2 + ay ** 2 + az ** 2) ** 0.5
-            jerkMag = (netG - oldG) / SAMPLE_INTERVAL
+            jerkMag = abs((netG - oldG)) / SAMPLE_INTERVAL
             oldG = netG
 
             num_bytes = max102.get_data_present()
@@ -128,7 +128,7 @@ def main():
             if lo_plus.value == 0 and lo_minus.value == 0:
                 sensor_lines += f"4{timestamp}{ecg_value}\n"
             if jerkMag is not None:
-                sensor_lines += f"5{timestamp}{jerkMag}-{ax}-{ay}-{az}-{wx}-{wy}-{wz}\n"
+                sensor_lines += f"5{timestamp}{jerkMag}|{ax}|{ay}|{az}|{wx}|{wy}|{wz}\n"
 
             pipe(sensor_lines)
             time.sleep(SAMPLE_INTERVAL)
