@@ -12,7 +12,7 @@ from mpu6050_i2c import *
 import os
 
 SAMPLE_INTERVAL = 0.100
-
+TEST_MODE_FLAG = True
 
 # Constants for logging
 HWID = "9334de0b9ebd424d95e40d338953137e"
@@ -38,8 +38,25 @@ def pipe(log_entry):
             print(f"[HW Emulator] Error: {e}")
             time.sleep(1)
 
+def test_loop():
+    while True:
+        time.sleep(SAMPLE_INTERVAL * 10)
+        timestamp = str(int(time.time() * 1000))  # 13-digit timestamp in ms
+        sensor_lines = ""
+        sensor_lines += f"1{timestamp}{int(np.random.uniform(60, 100))}\n"  # Simulated BPM
+        sensor_lines += f"2{timestamp}{int(np.random.uniform(90, 100))}\n"  # Simulated SpO2
+        sensor_lines += f"3{timestamp}{int(np.random.uniform(36, 38))}\n"  # Simulated Temperature
+        sensor_lines += f"4{timestamp}{int(np.random.uniform(0, 1023))}\n"  # Simulated ECG value
+        sensor_lines += f"5{timestamp}{np.random.uniform(0, 10)}|{np.random.uniform(-2, 2)}|{np.random.uniform(-2, 2)}|{np.random.uniform(-2, 2)}|{np.random.uniform(-200, 200)}|{np.random.uniform(-200, 200)}\n"
+        print(sensor_lines)
+        pipe(sensor_lines)
+
 def main():
     ensure_pipe()
+    if TEST_MODE_FLAG:
+        print("Running in test mode. No hardware will be used and sample rate decrased by 10x")
+        test_loop()
+        return
     lo_plus = DigitalInputDevice(14)  # GPIO14 (Pin 8)
     lo_minus = DigitalInputDevice(15)  # GPIO15 (Pin 10)
 
@@ -115,22 +132,20 @@ def main():
             
             # multiply time stamp by 1000 to and truncate the decimal part to get resolution of ms
             timestamp = str(int(current_time * 1000))  # 13-digit timestamp in ms
-            sensor_lines = []
+            sensor_lines = ""
 
             if bpm is not None:
                 sensor_lines += f"1{timestamp}{int(bpm)}\n"
-            
             if spo2 is not None:
                 sensor_lines += f"2{timestamp}{int(spo2)}\n"
             if temp is not None:
                 sensor_lines += f"3{timestamp}{int(temp)}\n"
-                
             if lo_plus.value == 0 and lo_minus.value == 0:
                 sensor_lines += f"4{timestamp}{ecg_value}\n"
             if jerkMag is not None:
                 sensor_lines += f"5{timestamp}{jerkMag}|{ax}|{ay}|{az}|{wx}|{wy}|{wz}\n"
-
-            pipe(sensor_lines)
+            if len(sensor_lines) > 0:
+                pipe(sensor_lines)
             time.sleep(SAMPLE_INTERVAL)
 
     except KeyboardInterrupt:
