@@ -128,7 +128,7 @@ def main():
             if lo_plus.value == 0 and lo_minus.value == 0:
                 sensor_lines += f"4{timestamp}{ecg_value}\n"
             if jerkMag is not None:
-                sensor_lines += f"5{timestamp}{jerkMag}\n"
+                sensor_lines += f"5{timestamp}{jerkMag}-{ax}-{ay}-{az}-{wx}-{wy}-{wz}\n"
 
             pipe(sensor_lines)
             time.sleep(SAMPLE_INTERVAL)
