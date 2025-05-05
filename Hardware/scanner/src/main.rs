@@ -1,10 +1,10 @@
-use std::io::BufRead;
-use std::{rc, string};
+use std::io::{BufRead};
 use std::time::Duration;
-use std::{fmt::Error, fs::File, io::BufReader};
-
+use std::{
+    fs::File,
+    io::BufReader,
+};
 use reqwest::Client;
-// scanner service
 use tokio;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
@@ -22,9 +22,11 @@ async fn pipe_in(tx: mpsc::Sender<String>) {
         for line in reader.lines() {
             match line {
                 Ok(data) => {
-                    match tx.send(data).await{
+                    match tx.send(data).await {
                         Ok(data) => {}
-                        Err(e) => {println!("Error {}",e)}
+                        Err(e) => {
+                            eprintln!("Error {}", e)
+                        }
                     }
                 }
                 Err(e) => {
@@ -46,7 +48,7 @@ async fn create_and_upload_chunk(mut rx: mpsc::Receiver<String>) {
 
         let mut lines = 0;
         loop {
-            match rx.recv().await{
+            match rx.recv().await {
                 Some(data) => {
                     chunk.push_str(data.as_str());
                     chunk.push_str("\n");
@@ -54,19 +56,21 @@ async fn create_and_upload_chunk(mut rx: mpsc::Receiver<String>) {
                         lines = 0;
                         break;
                     }
-                    lines+=1;
+                    lines += 1;
                 }
                 None => {
                     eprint!("Channel is closed");
                 }
             }
         }
-        println!("Chunk => {}", chunk);
-        let res = client.post(
-            "http://edp.durb.xyz/api/addrawdata"
-        )
-        .header("Content-Type", "text/plain")
-        .body(chunk.clone()).timeout(Duration::from_secs(5)).send().await;
+        // println!("Chunk => {}", chunk);
+        let res = client
+            .post("http://localhost:3000/api/addrawdata")
+            .header("Content-Type", "text/plain")
+            .body(chunk.clone())
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await;
 
         match res {
             Ok(res) => {

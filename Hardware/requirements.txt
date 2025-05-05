@@ -1,8 +1,4 @@
-Package                                  Version
----------------------------------------- ----------------
 adafruit-circuitpython-ads1x15           
+adafruit-blinka
 numpy
-collections
 gpiozero
-time
-busio

@@ -12,7 +12,15 @@ sensorID -> string (1 digit, 0-9)
 timestamp -> string (var char, unix timestamp, 13 digits)
 sensorData -> string (var char, data separated by '|')
 ```
-
+#### Alert
+```
+alert ->  hwid, hwpassword, timestamp, sensorID, alertMessage
+hwid -> string (uuid)
+hwpassword -> string (16 chars)
+timestamp -> string (var char, unix timestamp, 13 digits)
+sensorID -> string (1 digit, 0-9)
+alertMessage -> string (var char, alert message)
+```
 
 
 ## Start the Care Sync Server

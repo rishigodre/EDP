@@ -4,24 +4,29 @@ import random
 import numpy as np
 
 PIPE_PATH = "/tmp/hw_data_pipe"
-SAMPLE_INTERVAL = 0.01
+MODEL_PIPE_PATH = "/tmp/model_data_pipe"
+SAMPLE_INTERVAL = 0.1
 
 def ensure_pipe():
     """Create the named pipe if it doesn't exist."""
     if not os.path.exists(PIPE_PATH):
         os.mkfifo(PIPE_PATH)
+    if not os.path.exists(MODEL_PIPE_PATH):
+        os.mkfifo(MODEL_PIPE_PATH)
+    
 def pipe(log_entry):
-    with open(PIPE_PATH, "w") as f:
-        f.write(log_entry)
-        try:
-            with open(PIPE_PATH, 'w') as pipe:
-                pipe.write(log_entry)
-        except BrokenPipeError:
-            print("[HW Emulator] Reader disconnected. Waiting to retry...")
-            time.sleep(1)
-        except Exception as e:
-            print(f"[HW Emulator] Error: {e}")
-            time.sleep(1)
+    try:
+        with open(PIPE_PATH, 'w') as pipe:
+            pipe.write(log_entry)
+        with open(MODEL_PIPE_PATH, 'w') as model_pipe:
+            model_pipe.write(log_entry)
+            
+    except BrokenPipeError:
+        print("[HW Emulator] Reader disconnected. Waiting to retry...")
+        time.sleep(1)
+    except Exception as e:
+        print(f"[HW Emulator] Error: {e}")
+        time.sleep(1)
 
 def generate_sensor_data(sensor_id: int) -> str:
     """Create a single line of sensor data in string format."""

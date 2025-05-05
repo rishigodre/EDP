@@ -67,7 +67,7 @@ router.post("/addrawdata", async (req: Request, res: Response) => {
 
 router.post("/alert", async (req: Request, res: Response) => {
     try {
-        const alertData = req.body.Data;
+        const alertData = req.body;
         if (!alertData) throw new Error("No data provided");
         if (!DB.db) throw new Error("Database not connected");
 

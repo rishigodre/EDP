@@ -18,7 +18,7 @@ TEST_MODE_FLAG = True
 HWID = "9334de0b9ebd424d95e40d338953137e"
 HW_PASSWORD = "A1B2C3D4E5F6G7H8"
 PIPE_PATH = "/tmp/hw_data_pipe"
-
+MODEL_PIPE_PATH = "/tmp/model_data_pipe"
 
 def ensure_pipe():
     if not os.path.exists(PIPE_PATH):
@@ -26,17 +26,17 @@ def ensure_pipe():
         print(f"[HW Emulator] Created FIFO at {PIPE_PATH}")
         
 def pipe(log_entry):
-    with open(PIPE_PATH, "w") as f:
-        f.write(log_entry)
-        try:
-            with open(PIPE_PATH, 'w') as pipe:
-                pipe.write(log_entry)
-        except BrokenPipeError:
-            print("[HW Emulator] Reader disconnected. Waiting to retry...")
-            time.sleep(1)
-        except Exception as e:
-            print(f"[HW Emulator] Error: {e}")
-            time.sleep(1)
+    try:
+        with open(PIPE_PATH, 'w') as pipe:
+            pipe.write(log_entry)
+        with open(MODEL_PIPE_PATH, 'w') as model_pipe:
+            model_pipe.write(log_entry)
+    except BrokenPipeError:
+        print("[HW Emulator] Reader disconnected. Waiting to retry...")
+        time.sleep(1)
+    except Exception as e:
+        print(f"[HW Emulator] Error: {e}")
+        time.sleep(1)
 
 def test_loop():
     while True:
