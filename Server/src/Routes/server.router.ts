@@ -10,6 +10,7 @@ import { Alert } from "../Models/alert";
 import { UserLog } from "../Models/userLog";
 import { ObjectId } from "mongodb";
 import { DeviceToken } from "../Models/deviceToken";
+import { sendNotification } from "../Services/firebaseService";
 
 
 export const router = express.Router();
@@ -71,9 +72,8 @@ router.post("/alert", async (req: Request, res: Response) => {
         const alertData = req.body;
         if (!alertData) throw new Error("No data provided");
         if (!DB.db) throw new Error("Database not connected");
-
         const alert: Alert = ParseAlert(alertData);
-        console.log(alert);
+        sendNotification("Alert", alert.info);
         wss.broadcastToClient(alert);
         res.status(200).send({ message: "Alert sent successfully" });
     } catch (error: any) {
