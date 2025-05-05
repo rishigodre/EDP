@@ -1,5 +1,5 @@
 // External Dependencies
-import express, { raw, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import { connectToDatabase } from "../Services/database.service";
 import { Chunk } from "../Models/chunk";
 import { ParseAlert, ParseRawData } from "../Helpers/Parser";
@@ -7,6 +7,8 @@ import { MongoDB } from "../Services/database.service";
 import * as mongoDB from "mongodb";
 import { WebSocketService } from "../Services/websocket.service";
 import { Alert } from "../Models/alert";
+import { UserLog } from "../Models/userLog";
+import { ObjectId } from "mongodb";
 
 
 export const router = express.Router();
@@ -78,5 +80,59 @@ router.post("/alert", async (req: Request, res: Response) => {
     }
 });
 // PUT
+
+router.post("/userLog", async (req: Request, res: Response) => {
+    try {
+        if (!DB.db) throw new Error("Database not connected");
+
+        const { sensorId, logMessage, userId, password } = req.body;
+        
+        if (sensorId === undefined || sensorId === null) throw new Error("No sensorId provided");
+        if (!logMessage) throw new Error("No log message provided");
+
+        const newLog = new UserLog(sensorId, logMessage, userId, password);
+
+        const result = await DB.db.collection<UserLog>("UserLogs").insertOne(newLog);
+        res.status(200).send('User log recorded successfully');
+    } catch (error: any) {
+        res.status(500).send(error.message);
+    }
+});
+
+
+router.get("/userLog", async (req: Request, res: Response) : Promise<any> => {
+    try {
+      if (!DB.db) throw new Error("Database not connected");
+  
+      const userId = req.query.userId as string;
+      const password = req.query.password as string;
+  
+      if (!userId || !password) {
+        return res.status(400).send("Invalid or missing credentials ");
+      }
+  
+      const logs = await DB.db.collection<UserLog>("UserLogs").find({ userId, password }).sort({ timestamp: -1 }).toArray();
+  
+      res.status(200).send(logs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+router.delete("/userLog/:id", async (req: Request, res: Response) : Promise<any> => {
+    try {
+      if (!DB.db) throw new Error("Database not connected");
+  
+      const { id } = req.params;
+      const result = await DB.db.collection<UserLog>("UserLogs").deleteOne({ _id: new ObjectId(id) });
+  
+      if (result.deletedCount === 0) {
+        return res.status(404).send("User log not found");
+      }
+      return res.status(200).send("User log deleted");
+    } catch (error: any) {
+      return res.status(500).send(error.message);
+    }
+  });
 
 // DELETE
