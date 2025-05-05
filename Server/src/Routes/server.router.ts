@@ -40,7 +40,7 @@ router.get("/getrawdataafter", async (req: Request, res: Response) => {
         if (!timestamp) throw new Error("No timestamp provided");
         if (!DB.db) throw new Error("Database not connected");
 
-        const chunks = (await DB.db.collection<Chunk>("Chunks").find({ timestamp: { $gt: timestamp }, hwid: { $eq: hwid }, password: { $eq: password } }).toArray());
+        const chunks = (await DB.db.collection<Chunk>("Chunks").find({ timestamp: { $gt: timestamp }, hwid: { $eq: hwid }, password: { $eq: password } }).sort({ timestamp: -1 }).toArray());
         res.status(200).send(chunks);
     } catch (ex: any) {
         res.status(500).send(ex.message);
