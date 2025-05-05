@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 import time
 import requests
-
+import math
 hwid = "9334de0b9ebd424d95e40d338953137e"
 hwpass = "A1B2C3D4E5F6G7H8"
 
@@ -21,6 +21,7 @@ values = dict()
 values['bpm'] = 0.0
 values['spo2'] = 0.0
 values['jerk'] = 0.0
+values['accx'] = 0.0
 
 def ensure_pipe():
     if not os.path.exists(PIPE_PATH):
@@ -47,6 +48,7 @@ def get_real_time_data():
                         values['spo2'] = float(sensor_data[0])
                     elif sensor_id == 5:
                         values['jerk'] = float(sensor_data[0])
+                        values['accx'] = float(math.sqrt(float(sensor_data[1])**2 + float(sensor_data[2])**2 + float(sensor_data[3])**2))
     except Exception as e:
         print(f"Pipe error: {e}")
         time.sleep(1)
@@ -79,10 +81,16 @@ while True:
     try:
         get_real_time_data()
 
+        truncated_accx = 0
+        if abs(float(values['accx'])) > 3 * 9.8:
+            truncated_accx = 1
+        else:
+            truncated_accx = 0
+        
         test_data = pd.DataFrame([{
-            'HRV': float(values['bpm']),           # Replace with actual value
-            'SpO2': float(values['spo2']),          # Replace with actual value
-            'Accelerometer': float(values['jerk']) # Replace with actual value
+            'HRV': float(values['bpm']),           
+            'SpO2': float(values['spo2']),          
+            'Accelerometer': truncated_accx,  
         }])
         print(test_data)
         pred = model.predict(test_data)[0]
