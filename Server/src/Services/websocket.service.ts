@@ -7,17 +7,25 @@ export const portwss: { port?: number } = {};
 export class WebSocketService {
   private wss: WebSocketServer;
   private clients: Map<string, WebSocket> = new Map();
+  private running: Map<string, boolean> = new Map();
 
   constructor(port: number) {
-    this.wss = new WebSocketServer({ port });
+    this.wss = new WebSocketServer({ port , });
 
     this.wss.on("connection", (ws: WebSocket) => {
       console.log("New client connected");
 
-      // Handle client registration
       ws.on("message", (message) => {
         try {
           const msg = ParseClientMessage(message.toString());
+          if (msg.type === "start") {
+            this.running.set(msg.hwid + msg.password, true);
+            console.log(`Client started with hwidpass: ${msg.hwid + msg.password}`);
+          }
+          if (msg.type === "stop") {
+            this.running.set(msg.hwid + msg.password, false);
+            console.log(`Client stopped with hwidpass: ${msg.hwid + msg.password}`);
+          }
           if (msg.type === "register" && msg.hwid && msg.password) {
             this.clients.set(msg.hwid + msg.password, ws); // Register client by hwid
             console.log(`Client registered with hwidpass: ${msg.hwid + msg.password}`);
@@ -40,6 +48,14 @@ export class WebSocketService {
     });
 
     console.log(`WebSocket server started on port: ${port}`);
+  }
+
+  public checkRunningStatus(hwidpass: string): boolean{
+    const flag = this.running.get(hwidpass);
+    if (flag) {
+      return flag;
+    }
+    return false;
   }
 
   private removeClient(ws: WebSocket): void {

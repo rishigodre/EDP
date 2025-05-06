@@ -20,6 +20,7 @@ console.log("Database: ", DB.db?.databaseName);
 router.use(express.text());
 router.use(express.json());
 
+
 const wss = new WebSocketService(3011);
 
 // GET
@@ -56,6 +57,10 @@ router.post("/addrawdata", async (req: Request, res: Response) => {
         if (!rawData) throw new Error("No data provided");
         const parsedData = ParseRawData(rawData.trim());
         if (!DB.db) throw new Error("Database not connected");
+        if (!wss.checkRunningStatus(parsedData.hwid + parsedData.password)) {   
+            res.status(200).send("Device not enabled");
+            return;
+        }
 
         const result = await DB.db.collection<Chunk>("Chunks").insertOne(parsedData);
 
@@ -66,6 +71,7 @@ router.post("/addrawdata", async (req: Request, res: Response) => {
         res.status(500).send(error.message);
     }
 });
+
 
 router.post("/alert", async (req: Request, res: Response) => {
     try {
